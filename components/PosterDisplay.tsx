@@ -5,11 +5,11 @@ interface PosterDisplayProps {
   poster: GeneratedPoster | null;
   isGenerating: boolean;
   error: string | null;
-  isDarkMode: boolean; // Added prop
+  isDarkMode: boolean;
 }
 
 const PosterDisplay: React.FC<PosterDisplayProps> = ({ poster, isGenerating, error, isDarkMode }) => {
-  
+
   const handleDownload = () => {
     if (poster) {
       const link = document.createElement('a');
@@ -25,14 +25,14 @@ const PosterDisplay: React.FC<PosterDisplayProps> = ({ poster, isGenerating, err
     <div className="h-full flex flex-col relative">
        {/* Background Grid Pattern for Display Area */}
       <div className={`absolute inset-0 rounded-2xl pointer-events-none opacity-20 bg-[size:40px_40px] ${
-        isDarkMode 
-          ? 'bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] border-2 border-white/10' 
+        isDarkMode
+          ? 'bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] border-2 border-white/10'
           : 'bg-[linear-gradient(rgba(0,0,0,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.05)_1px,transparent_1px)] border-2 border-black/5'
       }`} />
 
       {/* Main Content Area */}
       <div className="flex-grow flex items-center justify-center min-h-[500px] sm:min-h-[600px] p-6">
-        
+
         {/* State 1: Empty */}
         {!poster && !isGenerating && !error && (
           <div className={`text-center flex flex-col items-center ${isDarkMode ? 'opacity-50' : 'opacity-60'}`}>
@@ -78,15 +78,15 @@ const PosterDisplay: React.FC<PosterDisplayProps> = ({ poster, isGenerating, err
         {poster && !isGenerating && (
           <div className="relative group perspective-1000">
              <div className="relative rounded-lg overflow-hidden shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] border-[8px] border-white transition-transform duration-500 hover:rotate-y-2 hover:scale-[1.02]">
-                <img 
-                  src={poster.imageUrl} 
-                  alt="Generated Team Poster" 
+                <img
+                  src={poster.imageUrl}
+                  alt="Generated Team Poster"
                   className="max-h-[70vh] w-auto object-cover aspect-[3/4]"
                 />
-                
+
                 {/* Download Overlay */}
                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
-                   <button 
+                   <button
                     onClick={handleDownload}
                     className="transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 bg-white text-black font-bold py-3 px-8 rounded-full shadow-lg hover:scale-110 flex items-center gap-2"
                    >

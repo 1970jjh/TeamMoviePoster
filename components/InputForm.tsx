@@ -7,11 +7,11 @@ interface InputFormProps {
   onSubmit: () => void;
   isGenerating: boolean;
   disabled: boolean;
-  isDarkMode: boolean; // Added prop
+  isDarkMode: boolean;
 }
 
 const InputForm: React.FC<InputFormProps> = ({ formData, setFormData, onSubmit, isGenerating, disabled, isDarkMode }) => {
-  
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const newFiles = Array.from(e.target.files);
@@ -44,8 +44,8 @@ const InputForm: React.FC<InputFormProps> = ({ formData, setFormData, onSubmit, 
   };
 
   const inputBaseClass = `w-full border rounded-lg p-3 transition-all backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-purple-500 ${
-    isDarkMode 
-      ? 'bg-white/5 border-white/10 text-white placeholder-gray-500' 
+    isDarkMode
+      ? 'bg-white/5 border-white/10 text-white placeholder-gray-500'
       : 'bg-white/50 border-gray-300 text-slate-900 placeholder-gray-400'
   }`;
 
@@ -95,7 +95,7 @@ const InputForm: React.FC<InputFormProps> = ({ formData, setFormData, onSubmit, 
         <div className="flex justify-between items-center mb-1">
           <label className={labelClass}>사진 업로드 (단체 사진 또는 개인별 사진)</label>
           {formData.images.length > 0 && (
-             <button 
+             <button
               onClick={clearAllImages}
               className="text-xs text-red-500 hover:text-red-700 font-medium underline"
             >
@@ -103,7 +103,7 @@ const InputForm: React.FC<InputFormProps> = ({ formData, setFormData, onSubmit, 
             </button>
           )}
         </div>
-        
+
         {/* Upload Area */}
         <div className="space-y-3">
             {/* Drop Zone */}
@@ -111,8 +111,8 @@ const InputForm: React.FC<InputFormProps> = ({ formData, setFormData, onSubmit, 
               onDrop={handleDrop}
               onDragOver={handleDragOver}
               className={`border-2 border-dashed rounded-xl p-4 text-center transition-all cursor-pointer relative group
-                ${isDarkMode 
-                    ? 'border-white/20 hover:border-purple-500 hover:bg-white/5' 
+                ${isDarkMode
+                    ? 'border-white/20 hover:border-purple-500 hover:bg-white/5'
                     : 'border-gray-300 hover:border-purple-500 hover:bg-purple-50'
                 }
               `}
@@ -125,7 +125,7 @@ const InputForm: React.FC<InputFormProps> = ({ formData, setFormData, onSubmit, 
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                 disabled={disabled}
               />
-              
+
               <div className="flex flex-col items-center justify-center py-4">
                   <div className="text-3xl mb-2 opacity-50 group-hover:scale-110 transition-transform">🖼️</div>
                   <p className={`font-medium text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
@@ -142,10 +142,10 @@ const InputForm: React.FC<InputFormProps> = ({ formData, setFormData, onSubmit, 
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                 {formData.images.map((file, idx) => (
                   <div key={idx} className="relative aspect-square rounded-lg overflow-hidden group border border-gray-200 dark:border-gray-700 shadow-sm">
-                    <img 
-                      src={URL.createObjectURL(file)} 
-                      alt={`preview-${idx}`} 
-                      className="w-full h-full object-cover" 
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={`preview-${idx}`}
+                      className="w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <button
@@ -174,10 +174,10 @@ const InputForm: React.FC<InputFormProps> = ({ formData, setFormData, onSubmit, 
               disabled={disabled}
               className={`
                 relative p-2 rounded-xl border transition-all duration-200 flex flex-col items-center justify-center gap-1 aspect-square
-                ${formData.styleId === style.id 
-                  ? 'bg-gradient-to-br border-transparent ring-2 ring-offset-1 ring-offset-transparent scale-105 shadow-lg' 
-                  : isDarkMode 
-                    ? 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/30' 
+                ${formData.styleId === style.id
+                  ? 'bg-gradient-to-br border-transparent ring-2 ring-offset-1 ring-offset-transparent scale-105 shadow-lg'
+                  : isDarkMode
+                    ? 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/30'
                     : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300 shadow-sm'
                 }
                 ${formData.styleId === style.id ? style.color + (isDarkMode ? ' ring-white' : ' ring-gray-400') : ''}
@@ -203,8 +203,8 @@ const InputForm: React.FC<InputFormProps> = ({ formData, setFormData, onSubmit, 
         disabled={disabled || formData.images.length === 0 || !formData.teamName || !formData.styleId}
         className={`
           w-full py-4 rounded-xl font-black text-lg tracking-widest uppercase transition-all duration-300 relative overflow-hidden group shadow-lg
-          ${disabled || formData.images.length === 0 || !formData.teamName || !formData.styleId 
-            ? 'bg-gray-500/50 text-gray-400 cursor-not-allowed' 
+          ${disabled || formData.images.length === 0 || !formData.teamName || !formData.styleId
+            ? 'bg-gray-500/50 text-gray-400 cursor-not-allowed'
             : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white active:scale-[0.99] hover:brightness-110'}
         `}
       >
