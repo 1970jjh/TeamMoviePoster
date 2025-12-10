@@ -1,93 +1,108 @@
-import { GoogleGenAI, Modality } from '@google/genai';
-import { MovieStyle } from '../types';
+import { GoogleGenAI } from "@google/genai";
+import { MovieStyle } from "../types";
 
-interface TeamInfo {
-  teamName: string;
-  members: string;
-  slogan: string;
-}
-
-async function fileToBase64(file: File): Promise<string> {
+const fileToGenericBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result as string;
-      const base64 = result.split(',')[1];
-      resolve(base64);
+      // Remove the data URL prefix (e.g., "data:image/jpeg;base64,")
+      const base64Data = result.split(',')[1];
+      resolve(base64Data);
     };
-    reader.onerror = reject;
+    reader.onerror = (error) => reject(error);
     reader.readAsDataURL(file);
   });
-}
+};
 
-export async function generatePoster(
-  images: File[],
-  teamInfo: TeamInfo,
+export const generatePoster = async (
+  imageFiles: File[],
+  details: { teamName: string; members: string; slogan: string },
   style: MovieStyle,
-  apiKey?: string
-): Promise<string> {
-  const key = apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
+  manualApiKey?: string
+): Promise<string> => {
+  // Use manual key if provided, otherwise fallback to env
+  const apiKey = manualApiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
 
-  if (!key || key === 'PLACEHOLDER_API_KEY') {
-    throw new Error('API 키가 설정되지 않았습니다.');
+  if (!apiKey || apiKey === 'PLACEHOLDER_API_KEY') {
+    throw new Error("API Key가 설정되지 않았습니다. Vercel 환경변수에 GEMINI_API_KEY를 설정해주세요.");
   }
 
-  const ai = new GoogleGenAI({ apiKey: key });
+  if (!imageFiles || imageFiles.length === 0) {
+    throw new Error("이미지가 제공되지 않았습니다.");
+  }
 
-  const imageContents = await Promise.all(
-    images.map(async (file) => ({
-      inlineData: {
-        mimeType: file.type,
-        data: await fileToBase64(file),
-      },
-    }))
+  const ai = new GoogleGenAI({ apiKey });
+
+  // Convert all images to base64 parts
+  const imageParts = await Promise.all(
+    imageFiles.map(async (file) => {
+      const base64Data = await fileToGenericBase64(file);
+      return {
+        inlineData: {
+          mimeType: file.type,
+          data: base64Data,
+        },
+      };
+    })
   );
 
-  const prompt = `Create a professional movie poster with the following specifications:
-- Team Name: "${teamInfo.teamName}"
-- Team Members: ${teamInfo.members}
-- Slogan/Tagline: "${teamInfo.slogan}"
-- Movie Style: ${style.name}
-- Style Description: ${style.promptAddon}
+  const prompt = `
+    Create a high-quality, cinematic movie poster based on the attached reference images.
+    There are ${imageFiles.length} reference image(s) provided.
 
-The poster should:
-1. Feature the people from the uploaded photos as the main characters
-2. Apply the ${style.name} movie style aesthetically
-3. Include the team name as the movie title prominently
-4. Display the slogan as a tagline
-5. List the team members like movie cast credits
-6. Look like an authentic professional movie poster
+    Target Style: ${style.name} (${style.promptAddon}).
 
-Generate a high-quality, cinematic movie poster image.`;
+    Instructions:
+    1. **CHARACTER INTEGRATION**: Identify the faces in the uploaded images. Transform them into the MAIN CHARACTERS of this poster.
+       - If multiple people are in the photos, group them together epicly.
+       - Style their costumes, hair, and lighting to perfectly match the '${style.name}' movie universe.
+       - Make them look heroic, dramatic, or hilarious depending on the genre.
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.0-flash-exp-image-generation',
-    contents: [
-      {
-        role: 'user',
+    2. **TEXT & CREDITS (CRITICAL - MAKE IT FUNNY)**:
+       - **Main Title**: "${details.teamName}" (Render this HUGE in the movie's signature font style).
+       - **Tagline**: "${details.slogan}" (Place this visibly).
+       - **The Billing Block (Bottom Credits)**: take the provided member names: "${details.members}" and assign them FAKE MOVIE ROLES at the bottom of the poster.
+         - *Examples of formatting to use*: "DIRECTED BY [Name 1]", "STARRING [Name 2]", "STUNT COORDINATOR [Name 3]", "CATERING BY [Name 4]", "VISUAL EFFECTS [Name 5]".
+         - Mix real roles (Director, Producer) with funny ones if appropriate.
+         - Use the classic "tall, condensed" movie credit font.
+       - **Extra Details**: Add cinematic fluff text like "COMING SOON", "IN THEATERS NOW", "A [Team Name] PRODUCTION", or award laurels/wreaths to make it look authentic.
+
+    3. **COMPOSITION**:
+       - Standard Portrait Movie Poster ratio (3:4 or 4:6).
+       - High contrast, professional color grading.
+       - Ensure the text doesn't cover the faces of the characters.
+
+    4. **VIBE**:
+       - Make it look like a REAL blockbuster poster that costs millions of dollars.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.0-flash-exp-image-generation',
+      contents: {
         parts: [
-          { text: prompt },
-          ...imageContents.map((img) => img),
+          {
+            text: prompt,
+          },
+          ...imageParts,
         ],
       },
-    ],
-    config: {
-      responseModalities: [Modality.TEXT, Modality.IMAGE],
-    },
-  });
+      config: {
+        responseModalities: ["TEXT", "IMAGE"],
+      },
+    });
 
-  const parts = response.candidates?.[0]?.content?.parts;
-  if (!parts) {
-    throw new Error('포스터 생성에 실패했습니다. 응답이 없습니다.');
-  }
-
-  for (const part of parts) {
-    if (part.inlineData) {
-      const imageData = part.inlineData.data;
-      const mimeType = part.inlineData.mimeType || 'image/png';
-      return `data:${mimeType};base64,${imageData}`;
+    // Extract image from response
+    for (const part of response.candidates?.[0]?.content?.parts || []) {
+      if (part.inlineData) {
+        return `data:image/png;base64,${part.inlineData.data}`;
+      }
     }
-  }
 
-  throw new Error('포스터 이미지가 생성되지 않았습니다.');
-}
+    throw new Error("이미지가 생성되지 않았습니다.");
+  } catch (error) {
+    console.error("Gemini Generation Error:", error);
+    throw error;
+  }
+};
