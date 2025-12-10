@@ -101,9 +101,9 @@ const App: React.FC = () => {
 
       <div className="p-4 md:p-8 flex flex-col min-h-screen">
         {/* Header Area */}
-        <header className="relative z-10 flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
+        <header className="relative z-10 flex flex-col items-center justify-center mb-8 gap-4">
            {/* Title */}
-           <div className="text-center md:text-left">
+           <div className="text-center">
             <h1 className="text-3xl md:text-5xl font-black tracking-tight mb-2 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent filter drop-shadow-sm">
               AI 팀 포스터 생성기
             </h1>
@@ -113,7 +113,7 @@ const App: React.FC = () => {
           </div>
 
           {/* Controls */}
-          <div className="flex items-center gap-4">
+          <div className="absolute right-0 top-0 flex items-center gap-4">
              {/* Theme Toggle */}
              <button
               onClick={() => setIsDarkMode(!isDarkMode)}
