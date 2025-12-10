@@ -72,9 +72,9 @@ POSTER REQUIREMENTS:
 4. OUTPUT: Generate a complete, polished movie poster image.`;
 
   try {
-    // Try Gemini 2.0 Flash with image generation capability
+    // Gemini 3.0 Pro Image Preview (나노바나나 프로)
     const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash-exp-image-generation',
+      model: 'gemini-3-pro-image-preview',
       contents: [
         {
           role: 'user',
