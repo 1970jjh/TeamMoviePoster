@@ -45,31 +45,75 @@ export const generatePoster = async (
     })
   );
 
-  const prompt = `You are a professional movie poster designer. Create a stunning, high-quality movie poster.
+  // 팀원 이름을 배열로 파싱
+  const memberNames = details.members.split(',').map(name => name.trim()).filter(name => name);
 
-REFERENCE IMAGES: I'm providing ${imageFiles.length} photo(s) of real people. These are the team members who should appear as the MAIN CHARACTERS in the poster.
+  // 팀원들에게 영화 역할 배정
+  const roles = ['감독 DIRECTED BY', '주연 STARRING', '조연 CO-STARRING', '특별출연 SPECIAL APPEARANCE', '우정출연 FRIENDSHIP APPEARANCE', '제작 PRODUCED BY', '각본 WRITTEN BY', '촬영 CINEMATOGRAPHY'];
+  const memberCredits = memberNames.map((name, idx) => {
+    const role = roles[idx % roles.length];
+    return `${role} ${name}`;
+  }).join(' · ');
 
-MOVIE STYLE: ${style.name}
-STYLE DETAILS: ${style.promptAddon}
+  const prompt = `You are a legendary Hollywood movie poster designer. Create an AUTHENTIC, CINEMATIC movie poster that looks like it cost $10 million to produce.
 
-POSTER REQUIREMENTS:
-1. CHARACTERS: The people from the reference photos must be the main characters
-   - Transform them to match the "${style.name}" movie aesthetic
-   - Appropriate costumes, lighting, and poses for the genre
-   - Keep their faces recognizable but stylized
+═══════════════════════════════════════
+📸 REFERENCE PHOTOS
+═══════════════════════════════════════
+I'm providing ${imageFiles.length} photo(s) of real people. These are the team members who MUST appear as the MAIN CHARACTERS in the poster. Transform them into movie stars!
 
-2. TEXT ELEMENTS (in Korean/English mix):
-   - TITLE: "${details.teamName}" - Large, prominent, in the movie's signature font style
-   - TAGLINE: "${details.slogan}" - Visible subtitle/catchphrase
-   - CREDITS at bottom: "${details.members}" - Format as movie credits (DIRECTED BY, STARRING, etc.)
-   - Add "COMING SOON" or similar cinematic text
+═══════════════════════════════════════
+🎬 MOVIE INFORMATION
+═══════════════════════════════════════
+• MOVIE TITLE: "${details.teamName}"
+• MOVIE STYLE: ${style.name}
+• VISUAL STYLE: ${style.promptAddon}
+• TEAM SLOGAN: "${details.slogan}"
+• CAST & CREW: ${memberCredits}
 
-3. COMPOSITION:
-   - Professional movie poster layout (portrait 2:3 ratio)
-   - Dramatic lighting and color grading matching "${style.name}"
-   - High production value, cinematic quality
+═══════════════════════════════════════
+🎨 POSTER DESIGN REQUIREMENTS
+═══════════════════════════════════════
 
-4. OUTPUT: Generate a complete, polished movie poster image.`;
+1. **MAIN VISUAL (Most Important!)**
+   - The people from reference photos are the HEROES of this poster
+   - Transform them into "${style.name}" movie characters
+   - Epic poses, dramatic expressions, movie-star styling
+   - Professional costume design matching the genre
+   - Cinematic lighting and atmosphere
+
+2. **TITLE TREATMENT**
+   - "${details.teamName}" as the MAIN TITLE
+   - Huge, bold, iconic font matching "${style.name}" style
+   - Add visual effects (glow, metallic, 3D, etc.) appropriate to genre
+
+3. **ICONIC MOVIE QUOTE (IMPORTANT!)**
+   - Create a memorable, powerful quote that fits "${style.name}" movie
+   - Examples: "With great power comes great responsibility" / "I'll be back" / "May the Force be with you"
+   - Place it prominently on the poster
+   - The quote should relate to team spirit, unity, or the movie's theme
+
+4. **TAGLINE**
+   - "${details.slogan}" as the tagline/catchphrase
+   - Stylish placement, readable but not overpowering
+
+5. **MOVIE CREDITS (Bottom Section)**
+   - Classic movie poster billing block style
+   - ${memberCredits}
+   - Use the tall, condensed "Steel Tongs" style credit font
+   - Add studio logos, rating badges, release date "COMING SOON"
+
+6. **COMPOSITION & QUALITY**
+   - Portrait orientation (2:3 movie poster ratio)
+   - Hollywood blockbuster production quality
+   - Professional color grading matching "${style.name}"
+   - Dramatic lighting, depth, and atmosphere
+   - Make it look like a REAL theatrical release poster
+
+═══════════════════════════════════════
+🎯 OUTPUT
+═══════════════════════════════════════
+Generate ONE stunning, complete movie poster image that would make audiences want to buy tickets immediately!`;
 
   try {
     // Gemini 3.0 Pro Image Preview (나노바나나 프로)
