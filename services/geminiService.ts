@@ -1,12 +1,11 @@
 import { GoogleGenAI } from "@google/genai";
 import { MovieStyle } from "../types";
 
-const fileToGenericBase64 = (file: File): Promise<string> => {
+const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result as string;
-      // Remove the data URL prefix (e.g., "data:image/jpeg;base64,")
       const base64Data = result.split(',')[1];
       resolve(base64Data);
     };
@@ -21,7 +20,6 @@ export const generatePoster = async (
   style: MovieStyle,
   manualApiKey?: string
 ): Promise<string> => {
-  // Use manual key if provided, otherwise fallback to env
   const apiKey = manualApiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
 
   if (!apiKey || apiKey === 'PLACEHOLDER_API_KEY') {
@@ -34,10 +32,10 @@ export const generatePoster = async (
 
   const ai = new GoogleGenAI({ apiKey });
 
-  // Convert all images to base64 parts
+  // Convert images to base64 parts for Gemini multimodal input
   const imageParts = await Promise.all(
     imageFiles.map(async (file) => {
-      const base64Data = await fileToGenericBase64(file);
+      const base64Data = await fileToBase64(file);
       return {
         inlineData: {
           mimeType: file.type,
@@ -47,62 +45,79 @@ export const generatePoster = async (
     })
   );
 
-  const prompt = `
-    Create a high-quality, cinematic movie poster based on the attached reference images.
-    There are ${imageFiles.length} reference image(s) provided.
+  const prompt = `You are a professional movie poster designer. Create a stunning, high-quality movie poster.
 
-    Target Style: ${style.name} (${style.promptAddon}).
+REFERENCE IMAGES: I'm providing ${imageFiles.length} photo(s) of real people. These are the team members who should appear as the MAIN CHARACTERS in the poster.
 
-    Instructions:
-    1. **CHARACTER INTEGRATION**: Identify the faces in the uploaded images. Transform them into the MAIN CHARACTERS of this poster.
-       - If multiple people are in the photos, group them together epicly.
-       - Style their costumes, hair, and lighting to perfectly match the '${style.name}' movie universe.
-       - Make them look heroic, dramatic, or hilarious depending on the genre.
+MOVIE STYLE: ${style.name}
+STYLE DETAILS: ${style.promptAddon}
 
-    2. **TEXT & CREDITS (CRITICAL - MAKE IT FUNNY)**:
-       - **Main Title**: "${details.teamName}" (Render this HUGE in the movie's signature font style).
-       - **Tagline**: "${details.slogan}" (Place this visibly).
-       - **The Billing Block (Bottom Credits)**: take the provided member names: "${details.members}" and assign them FAKE MOVIE ROLES at the bottom of the poster.
-         - *Examples of formatting to use*: "DIRECTED BY [Name 1]", "STARRING [Name 2]", "STUNT COORDINATOR [Name 3]", "CATERING BY [Name 4]", "VISUAL EFFECTS [Name 5]".
-         - Mix real roles (Director, Producer) with funny ones if appropriate.
-         - Use the classic "tall, condensed" movie credit font.
-       - **Extra Details**: Add cinematic fluff text like "COMING SOON", "IN THEATERS NOW", "A [Team Name] PRODUCTION", or award laurels/wreaths to make it look authentic.
+POSTER REQUIREMENTS:
+1. CHARACTERS: The people from the reference photos must be the main characters
+   - Transform them to match the "${style.name}" movie aesthetic
+   - Appropriate costumes, lighting, and poses for the genre
+   - Keep their faces recognizable but stylized
 
-    3. **COMPOSITION**:
-       - Standard Portrait Movie Poster ratio (3:4 or 4:6).
-       - High contrast, professional color grading.
-       - Ensure the text doesn't cover the faces of the characters.
+2. TEXT ELEMENTS (in Korean/English mix):
+   - TITLE: "${details.teamName}" - Large, prominent, in the movie's signature font style
+   - TAGLINE: "${details.slogan}" - Visible subtitle/catchphrase
+   - CREDITS at bottom: "${details.members}" - Format as movie credits (DIRECTED BY, STARRING, etc.)
+   - Add "COMING SOON" or similar cinematic text
 
-    4. **VIBE**:
-       - Make it look like a REAL blockbuster poster that costs millions of dollars.
-  `;
+3. COMPOSITION:
+   - Professional movie poster layout (portrait 2:3 ratio)
+   - Dramatic lighting and color grading matching "${style.name}"
+   - High production value, cinematic quality
+
+4. OUTPUT: Generate a complete, polished movie poster image.`;
 
   try {
+    // Gemini 3.0 Pro Image Preview (나노바나나 프로)
     const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash-exp-image-generation',
-      contents: {
-        parts: [
-          {
-            text: prompt,
-          },
-          ...imageParts,
-        ],
-      },
+      model: 'gemini-3-pro-image-preview',
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            { text: prompt },
+            ...imageParts,
+          ],
+        },
+      ],
       config: {
-        responseModalities: ["TEXT", "IMAGE"],
+        responseModalities: ['Text', 'Image'],
       },
     });
 
-    // Extract image from response
-    for (const part of response.candidates?.[0]?.content?.parts || []) {
-      if (part.inlineData) {
-        return `data:image/png;base64,${part.inlineData.data}`;
+    // Extract generated image from response
+    const parts = response.candidates?.[0]?.content?.parts;
+    if (parts) {
+      for (const part of parts) {
+        if (part.inlineData && part.inlineData.data) {
+          const mimeType = part.inlineData.mimeType || 'image/png';
+          return `data:${mimeType};base64,${part.inlineData.data}`;
+        }
       }
     }
 
-    throw new Error("이미지가 생성되지 않았습니다.");
-  } catch (error) {
+    // If no image in response, throw error with details
+    const textResponse = parts?.find(p => p.text)?.text || '';
+    throw new Error(`이미지 생성 실패. 모델 응답: ${textResponse.substring(0, 200)}`);
+
+  } catch (error: any) {
     console.error("Gemini Generation Error:", error);
+
+    // Provide more helpful error messages
+    if (error.message?.includes('API key')) {
+      throw new Error("API Key가 유효하지 않습니다. Vercel 환경변수를 확인해주세요.");
+    }
+    if (error.message?.includes('quota') || error.message?.includes('429')) {
+      throw new Error("API 사용량 한도 초과. 잠시 후 다시 시도해주세요.");
+    }
+    if (error.message?.includes('safety') || error.message?.includes('blocked')) {
+      throw new Error("안전 필터에 의해 차단되었습니다. 다른 이미지나 스타일을 시도해주세요.");
+    }
+
     throw error;
   }
 };
