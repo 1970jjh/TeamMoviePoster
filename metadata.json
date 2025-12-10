@@ -1,0 +1,5 @@
+{
+  "name": "AI Team Poster Generator",
+  "description": "Create epic movie-style team posters using Gemini Nano Banana Pro.",
+  "requestFramePermissions": []
+}
